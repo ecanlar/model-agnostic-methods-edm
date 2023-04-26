@@ -1,0 +1,54 @@
+---
+title: "Model-agnostic: Partial Dependency Plot (PDP)"
+author: "Yusef Ahsini Ouariaghli, Eva Cantín Larumbe and Pablo Díaz-Masa Valencia"
+date: "2023-04-26"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1. One dimensional Partial Dependence Plot.
+The partial dependence plot shows the marginal effect of a feature on the predicted outcome of a previously fit model. 
+
+## Exercise
+**Apply PDP to the regression example of predicting bike rentals. Fit a random forest approximation for the prediction of bike rentals (cnt). Use the partial dependence plot to visualize the relationships the model learned. Use the slides shown in class as model.**
+
+First and foremost, we use the perform a Random Forest to predict the number of bike rentals (cnt). 
+
+```{r}
+df <- read.csv("day.csv")
+df$season <- as.factor(df$season)
+df$MISTY <- ifelse(df$weathersit == 2, 1, 0)
+df$RAIN <- ifelse(df$weathersit %in% c(3, 4), 1, 0)
+df$temp <- df$temp * 47 - 8
+df$hum <- df$hum * 100
+df$windspeed <- df$windspeed * 67
+df$dteday <- as.Date(df$dteday, format = "%Y-%m-%d")
+df$days_since_2011 <- as.numeric(df$dteday - as.Date("2011-01-01"))
+
+library(randomForest)
+set.seed(1234)
+rf <- randomForest(formula = cnt ~ workingday +  holiday + season + MISTY + RAIN + temp + hum + windspeed + days_since_2011, 
+                   data = df)
+```
+
+
+Then, we do a Partial Dependence Plot to explain the results from the Random Forest, because it can show if the relationship between the target and a feature is linear, monotonic or more complex.
+
+```{r}
+library(pdp)
+pdp1 <-partial(rf, pred.var = c("days_since_2011"), plot=TRUE)
+pdp2<- partial(rf, pred.var=c("temp"), plot=TRUE)
+pdp3 <- partial(rf, pred.var=c("hum"), plot=TRUE)
+pdp4 <-partial(rf, pred.var=c("windspeed"), plot=TRUE)
+pdp1
+pdp2
+pdp3
+pdp4
+
+```
+
