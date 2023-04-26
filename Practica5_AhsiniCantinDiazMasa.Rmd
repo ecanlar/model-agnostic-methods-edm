@@ -19,7 +19,7 @@ The partial dependence plot shows the marginal effect of a feature on the predic
 
 First and foremost, we use the perform a Random Forest to predict the number of bike rentals (cnt). 
 
-```{r}
+```{r include=FALSE}
 df <- read.csv("day.csv")
 df$season <- as.factor(df$season)
 df$MISTY <- ifelse(df$weathersit == 2, 1, 0)
@@ -41,18 +41,29 @@ Then, we do a Partial Dependence Plot to explain the results from the Random For
 
 ```{r echo=FALSE}
 library(pdp)
-library(ggplot2)
-pdp1 <-partial(rf, pred.var = c("days_since_2011"), chull=TRUE)
-pdp2<- partial(rf, pred.var=c("temp"), chull=TRUE)
-pdp3 <- partial(rf, pred.var=c("hum"), chull=TRUE)
-pdp4 <-partial(rf, pred.var=c("windspeed"), chull=TRUE)
+p1 <- partial(rf, pred.var = c("days_since_2011"), plot=TRUE, rug=TRUE, train=df)
+p2 <- partial(rf, pred.var = c("temp"), plot=TRUE, rug=TRUE, train=df)
+p3 <- partial(rf, pred.var = c("hum"), plot=TRUE, rug=TRUE, train=df)
+p4 <- partial(rf, pred.var = c("windspeed"), plot=TRUE, rug=TRUE, train=df)
 
-autoplot(pdp1, contour = TRUE, ylab = "Predicted number of bike rentals") + ggtitle('PDP plot between days_since_2011 and cnt') + theme_bw() + theme(plot.title = element_text(hjust = 0.5, size = 16))
-
-autoplot(pdp2, contour = TRUE, ylab = "Predicted number of bike rentals") + ggtitle('PDP plot between temp and cnt') + theme_bw() + theme(plot.title = element_text(hjust = 0.5, size = 16))
-
-autoplot(pdp3, contour = TRUE, ylab = "Predicted number of bike rentals") + ggtitle('PDP plot between hum and cnt') + theme_bw() + theme(plot.title = element_text(hjust = 0.5, size = 16))
-
-autoplot(pdp4, contour = TRUE, ylab = "Predicted number of bike rentals") + ggtitle('PDP plot between windspeed and cnt') + theme_bw() + theme(plot.title = element_text(hjust = 0.5, size = 16))
+library(gridExtra)
+grid.arrange(p1, p2, p3, p4, ncol = 2)
 ```
-- PDP days_since_2011 and cnt: it is shown that in the first 100 days there is barely an increase of the number of bike rentals. However, after these 100 days there is a tipping point and it rises to 3700 approximately. Then, there is a plain tendency until 400 days, when it soars more than 1000 bikes in a few days. Then, we can observe again a tiny increase in the number of bikes rented. Finally, it decreases a few in the day 650. 
+The rugs of the X-axis indicate the data distribution.
+
+- PDP days_since_2011 and cnt: It is shown that in the first 100 days, bike rentals barely increase. However, after these 100 days, there is a tipping point that rises to approximately 3700. Then, there is a flat tendency until 400 days, when it soars more than 1000 bikes in a few days. Then, we can observe again a tiny increase in the number of bikes rented. Finally, it drops slightly at day 650. On average, the more days elapsed, the more bikes are predicted to be rented. 
+
+- PDP temp and cnt: the hotter days, the more bikes are predicted to be rented. However, more bikes could be rented on average when the temperature is neither too cold nor too hot. 
+
+- PDP hum and cnt: People are predicted to rent fewer bikes when the humidity is above 60%. The more humidity there is, the fewer bikes are rented, so it makes sense. 
+
+- PDP windspeed and cnt: When the windspeed exceeds 24 km/h, approximately the number of bikes rented is noisily less. An interesting aspect is that when the windspeed is between 25km/h and 30km/h, there is no difference in the number of bikes rented, even it is higher. It could be that there is not much training data, and the Random Forest is not predicting well extreme (anomalous) values.
+
+
+Finally, we can see that the most significant differences can be seen in days_since_2011 and temperature. Therefore, it can be inferred that a change in these two values contributes more to predicting the number of bikes.
+
+
+
+
+# 2.
+
