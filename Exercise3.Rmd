@@ -1,0 +1,47 @@
+---
+title: "PDP to explain the price of a house."
+author: "Yusef Ahsini Ouariaghli, Eva Cantín Larumbe and Pablo Díaz-Masa Valencia"
+date: "2023-04-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Apply the previous concepts to predict the price of a house from the database kc_house_data.csv. In this case, use again a random forest approximation for the prediction based on the features bedrooms, bathrooms, sqft_living, sqft_lot, floors and yr_built. Use the partial dependence plot to visualize the relationships the model learned.**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(dplyr)
+#read data
+housedata <- read.csv("kc_house_data.csv")
+
+# clean data
+housedata2 <- slice(housedata, c(-15871))   # fila con errores
+
+#perform a random forest
+library(randomForest)
+rf2 <- randomForest(formula = price ~ bedrooms +  bathrooms + sqft_living + sqft_lot + floors + yr_built,
+                   data = housedata2)
+
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(pdp)
+library(gridExtra)
+library(grid)
+
+
+#PDP plots
+p6 <- partial(rf2, pred.var = c("bedrooms"), plot=TRUE, rug=TRUE, train=housedata2)  
+p7 <- partial(rf2, pred.var = c("bathrooms"), plot=TRUE, rug=TRUE, train=housedata2) 
+p8 <- partial(rf2, pred.var = c("sqft_living"), plot=TRUE, rug=TRUE, train=housedata2) 
+p9 <- partial(rf2, pred.var = c("sqft_lot"), plot=TRUE, rug=TRUE, train=housedata2) 
+p10 <- partial(rf2, pred.var = c("floors"), plot=TRUE, rug=TRUE, train=housedata2) 
+p11 <- partial(rf2, pred.var = c("yr_built"), plot=TRUE, rug=TRUE, train=housedata2)
+
+grid.arrange(p6, p7, ncol=2, top = textGrob("PDP Price of a house prediction",gp=gpar(fontsize=18)))
+grid.arrange(p8, p9, ncol=2)
+grid.arrange(p10, p1, ncol=2)
+```
