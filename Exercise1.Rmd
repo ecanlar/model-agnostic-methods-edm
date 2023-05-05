@@ -1,0 +1,61 @@
+---
+title: "One dimensional Partial Dependence Plot"
+author: "Yusef Ahsini Ouariaghli, Eva Cantín Larumbe and Pablo Díaz-Masa Valencia"
+date: "2023-04-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The partial dependence plot shows the marginal effect of a feature on the predicted outcome of a previously fit model. 
+
+## Exercise
+**Apply PDP to the regression example of predicting bike rentals. Fit a random forest approximation for the prediction of bike rentals (cnt). Use the partial dependence plot to visualize the relationships the model learned. Use the slides shown in class as model.**
+
+First and foremost, we use the perform a Random Forest to predict the number of bike rentals (cnt). 
+
+```{r include=FALSE}
+df <- read.csv("day.csv")
+df$season <- as.factor(df$season)
+df$MISTY <- ifelse(df$weathersit == 2, 1, 0)
+df$RAIN <- ifelse(df$weathersit %in% c(3, 4), 1, 0)
+df$temp <- df$temp * 47 - 8
+df$hum <- df$hum * 100
+df$windspeed <- df$windspeed * 67
+df$dteday <- as.Date(df$dteday, format = "%Y-%m-%d")
+df$days_since_2011 <- as.numeric(df$dteday - as.Date("2011-01-01"))
+
+library(randomForest)
+set.seed(1234)
+rf <- randomForest(formula = cnt ~ workingday +  holiday + season + MISTY + RAIN + temp + hum + windspeed + days_since_2011,                    data = df)
+```
+
+
+Then, we do a Partial Dependence Plot to explain the results from the Random Forest, because it can show if the relationship between the target and a feature is linear, monotonic or more complex.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(pdp)
+p1 <- partial(rf, pred.var = c("days_since_2011"), plot=TRUE, rug=TRUE, train=df) 
+p2 <- partial(rf, pred.var = c("temp"), plot=TRUE, rug=TRUE, train=df)
+p3 <- partial(rf, pred.var = c("hum"), plot=TRUE, rug=TRUE, train=df)
+p4 <- partial(rf, pred.var = c("windspeed"), plot=TRUE, rug=TRUE, train=df)
+
+library(gridExtra)
+library(grid)
+grid.arrange(p1, p2, p3, p4, ncol = 2, top = textGrob("PDP Bike rentals prediciton",gp=gpar(fontsize=18)))
+```
+The rugs of the X-axis indicate the data distribution.
+
+- PDP days_since_2011 and cnt: It is shown that in the first 100 days, bike rentals barely increase. However, after these 100 days, there is a tipping point that rises to approximately 3700. Then, there is a flat tendency until 400 days, when it soars more than 1000 bikes in a few days. Then, we can observe again a tiny increase in the number of bikes rented. Finally, it drops slightly at day 650. On average, the more days elapsed, the more bikes are predicted to be rented. 
+
+- PDP temp and cnt: the hotter days, more bikes are predicted to be rented. However, more bikes could be rented on average when the temperature is neither too cold nor too hot. 
+
+- PDP hum and cnt: People are predicted to rent fewer bikes when the humidity is above 60%. The more humidity there is, the fewer bikes are rented, so it makes sense. 
+
+- PDP windspeed and cnt: When the windspeed exceeds 24 km/h, suddenly the number of bikes rented is plummets. An interesting aspect is that when windspeed is between 25km/h and 30km/h, there is no difference in the number of bikes rented. It could be that there is not much training data, and the Random Forest is not predicting well extreme (anomalous) values.
+
+
+Finally, we can see that the most significant differences can be seen in days_since_2011 and temperature. Therefore, it can be inferred that a change in these two values contributes more to predicting the number of bikes.
+
